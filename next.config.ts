@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Disabled PPR/cacheComponents: can cause hydration/runtime issues in production.
+  // cacheComponents: true,
+  // partialPrefetching: true,
+  productionBrowserSourceMaps: true,
   turbopack: {
     rules: {
       "*.css": {
