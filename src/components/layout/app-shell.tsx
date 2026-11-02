@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export function AppShell({ workspaceName, children }: { workspaceName: string; children: React.ReactNode }) {
@@ -24,17 +23,14 @@ export function AppShell({ workspaceName, children }: { workspaceName: string; c
             <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-bold">K</div>
             <div className="font-semibold text-sm">KPI Advertising Anka</div>
           </div>
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <Sheet open={open} onOpenChange={setOpen}>
-              <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>
-                <Menu className="h-5 w-5" />
-              </Button>
-              <SheetContent side="left" className="p-0 w-64">
-                <Sidebar onNavigate={() => setOpen(false)} />
-              </SheetContent>
-            </Sheet>
-          </div>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>
+              <Menu className="h-5 w-5" />
+            </Button>
+            <SheetContent side="left" className="p-0 w-64">
+              <Sidebar onNavigate={() => setOpen(false)} />
+            </SheetContent>
+          </Sheet>
         </header>
 
         {/* Desktop topbar */}
@@ -42,7 +38,6 @@ export function AppShell({ workspaceName, children }: { workspaceName: string; c
           <div className="text-sm text-muted-foreground">
             Workspace: <span className="font-medium text-foreground">{workspaceName}</span>
           </div>
-          <ThemeToggle />
         </div>
 
         {/* Mobile workspace label */}
