@@ -23,9 +23,12 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Use getSession() (cookie-based, no network round-trip) for the redirect
+  // decision to keep navigation fast. Real auth is enforced in server components.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   // API routes (including cron & OAuth callbacks) handle their own auth.
   if (request.nextUrl.pathname.startsWith("/api")) {

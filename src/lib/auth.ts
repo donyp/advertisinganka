@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -19,9 +20,9 @@ export async function getCurrentUser() {
     console.error("[auth] getCurrentUser failed", e);
     return null;
   }
-}
+});
 
-export async function getWorkspace() {
+export const getWorkspace = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user) return null;
@@ -50,4 +51,4 @@ export async function getWorkspace() {
     console.error("[auth] getWorkspace failed", e);
     return null;
   }
-}
+});
