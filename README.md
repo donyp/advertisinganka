@@ -31,8 +31,9 @@ npm install
 1. Buat project di [supabase.com](https://supabase.com).
 2. Ambil `Project URL`, `anon key`, `service_role key`.
 3. Ambil connection string Postgres (Settings → Database):
-   - `DATABASE_URL` → pooler port `6543` (tambahkan `?pgbouncer=true`)
-   - `DIRECT_URL` → direct port `5432`
+   - `DATABASE_URL` → **Transaction pooler** port `6543` (tambahkan `?pgbouncer=true`)
+   - `DIRECT_URL` → **Session pooler** port `5432`
+   - ⚠️ Jangan pakai "Direct connection" (host `db.xxx.supabase.co`) untuk Railway — Supabase direct DB hanya IPv6, Railway tidak bisa menjangkaunya. Pakai pooler (IPv4) untuk keduanya.
 4. Buat Storage bucket (public):
    - `media`
    - `reports`
@@ -82,7 +83,7 @@ Buka http://localhost:3000 → daftar akun → login.
 2. Railway otomatis mendeteksi Node via Nixpacks (`railway.json` sudah disediakan).
 3. Set environment variables di service (Variables):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-   - `DATABASE_URL` (pooler 6543), `DIRECT_URL` (direct 5432)
+   - `DATABASE_URL` (Transaction pooler 6543), `DIRECT_URL` (Session pooler 5432) — lihat catatan IPv4 di atas
    - `ENCRYPTION_KEY` (64 hex chars)
    - `NEXT_PUBLIC_APP_URL` = URL publik Railway Anda (mis. `https://xxx.up.railway.app`)
    - `CRON_SECRET` (string acak)
