@@ -15,62 +15,79 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const workspace = await getWorkspace();
-  if (!workspace) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const workspace = await getWorkspace();
+    if (!workspace) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const posts = await prisma.post.findMany({
-    where: { workspaceId: workspace.id },
-    orderBy: { createdAt: "desc" },
-    include: { platforms: true, media: { include: { asset: true } } },
-  });
-  return NextResponse.json(posts);
+    const posts = await prisma.post.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { createdAt: "desc" },
+      include: { platforms: true, media: { include: { asset: true } } },
+    });
+    return NextResponse.json(posts);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-  const workspace = await getWorkspace();
-  if (!workspace) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const workspace = await getWorkspace();
+    if (!workspace) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const body = await req.json();
+    const parsed = createSchema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const d = parsed.data;
-  const post = await prisma.post.create({
-    data: {
-      workspaceId: workspace.id,
-      brandId: d.brandId || null,
-      title: d.title,
-      caption: d.caption,
-      status: d.status,
-      scheduledAt: d.scheduledAt ? new Date(d.scheduledAt) : null,
-      notes: d.notes,
-      platforms: {
-        create: d.platformAccountIds.map((aid) => ({
-          accountId: aid,
-          platform: "INSTAGRAM", // placeholder; resolved below
-          content: d.caption,
-          status: d.status,
-          scheduledAt: d.scheduledAt ? new Date(d.scheduledAt) : null,
-        })),
+    const d = parsed.data;
+    const scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
+
+    // Only allow accounts & media that belong to this workspace.
+    const [accounts, assets, brand] = await Promise.all([
+      d.platformAccountIds.length
+        ? prisma.socialAccount.findMany({
+            where: { id: { in: d.platformAccountIds }, workspaceId: workspace.id },
+          })
+        : Promise.resolve([]),
+      d.mediaIds.length
+        ? prisma.mediaAsset.findMany({
+            where: { id: { in: d.mediaIds }, workspaceId: workspace.id },
+          })
+        : Promise.resolve([]),
+      d.brandId
+        ? prisma.brand.findFirst({ where: { id: d.brandId, workspaceId: workspace.id } })
+        : Promise.resolve(null),
+    ]);
+
+    const post = await prisma.post.create({
+      data: {
+        workspaceId: workspace.id,
+        brandId: brand?.id ?? null,
+        title: d.title,
+        caption: d.caption,
+        status: d.status,
+        scheduledAt,
+        notes: d.notes,
+        platforms: {
+          create: accounts.map((a) => ({
+            accountId: a.id,
+            platform: a.platform,
+            content: d.caption,
+            status: d.status,
+            scheduledAt,
+          })),
+        },
+        media: {
+          create: assets.map((asset, i) => ({ assetId: asset.id, order: i })),
+        },
       },
-      media: {
-        create: d.mediaIds.map((mid, i) => ({ assetId: mid, order: i })),
-      },
-    },
-    include: { platforms: true },
-  });
+      include: { platforms: true },
+    });
 
-  // Fix platform field per account
-  if (d.platformAccountIds.length) {
-    const accounts = await prisma.socialAccount.findMany({ where: { id: { in: d.platformAccountIds } } });
-    await Promise.all(
-      post.platforms.map((pp) => {
-        const acc = accounts.find((a) => a.id === pp.accountId);
-        if (acc) return prisma.postPlatform.update({ where: { id: pp.id }, data: { platform: acc.platform } });
-        return null;
-      })
-    );
+    return NextResponse.json(post);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-
-  return NextResponse.json(post);
 }

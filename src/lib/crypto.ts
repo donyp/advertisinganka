@@ -5,7 +5,10 @@ const ALG = "aes-256-gcm";
 function getKey(): Buffer {
   const hex = process.env.ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {
-    // fallback dev key (NOT for production)
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ENCRYPTION_KEY must be a 64-character hex string (32 bytes) in production");
+    }
+    // Dev-only fallback so local setup works before keys are configured.
     return Buffer.from("0".repeat(64), "hex");
   }
   return Buffer.from(hex, "hex");

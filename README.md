@@ -76,11 +76,35 @@ Buka http://localhost:3000 → daftar akun → login.
    `http://localhost:3000/api/oauth/facebook/callback`
 4. Isi `META_APP_ID` & `META_APP_SECRET`.
 
-## Deploy (Vercel)
+## Deploy ke Railway (disarankan)
 
-1. Push ke GitHub, import ke Vercel.
-2. Tambahkan semua env vars.
-3. `vercel.json` sudah berisi cron `/api/cron/publish` tiap menit. Set `CRON_SECRET` dan header otorisasi cron (Vercel mengirim `Authorization: Bearer <CRON_SECRET>` bila dikonfigurasi).
+1. Push repo ke GitHub, lalu di Railway: **New Project → Deploy from GitHub repo**.
+2. Railway otomatis mendeteksi Node via Nixpacks (`railway.json` sudah disediakan).
+3. Set environment variables di service (Variables):
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `DATABASE_URL` (pooler 6543), `DIRECT_URL` (direct 5432)
+   - `ENCRYPTION_KEY` (64 hex chars)
+   - `NEXT_PUBLIC_APP_URL` = URL publik Railway Anda (mis. `https://xxx.up.railway.app`)
+   - `CRON_SECRET` (string acak)
+   - `ENABLE_INTERNAL_SCHEDULER=true` (single replica; proses post terjadwal tiap menit di dalam server)
+4. Build command: `npm ci && npm run build` · Start command: `npm run start` (otomatis menjalankan `prisma migrate deploy`).
+5. Health check: `/api/health`.
+6. Generate domain di Railway → Settings → Networking → Generate Domain.
+7. Update Supabase **Auth → URL Configuration**:
+   - Site URL: URL Railway
+   - Redirect URLs: `https://<domain>/auth/callback`
+8. Update redirect URI OAuth Meta menjadi `https://<domain>/api/oauth/{instagram|facebook}/callback`.
+
+### Auto-publish di Railway
+
+Railway tidak punya cron bawaan seperti Vercel. Dua opsi:
+
+- **Internal scheduler (default, sederhana):** set `ENABLE_INTERNAL_SCHEDULER=true`. Server memproses post jatuh tempo tiap 60 detik. Cocok untuk 1 replica.
+- **External cron:** set `ENABLE_INTERNAL_SCHEDULER=false`, lalu panggil `GET https://<domain>/api/cron/publish` dengan header `Authorization: Bearer <CRON_SECRET>` tiap menit (mis. cron-job.org).
+
+### Deploy ke Vercel (opsional)
+
+`vercel.json` berisi cron `/api/cron/publish` tiap menit. Set env yang sama; cron Vercel mengirim `Authorization: Bearer <CRON_SECRET>` bila dikonfigurasi. Matikan `ENABLE_INTERNAL_SCHEDULER`.
 
 ## Struktur
 
