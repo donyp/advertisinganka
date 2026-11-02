@@ -123,8 +123,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   html {
     @apply font-sans;
+  }
+  /* Smooth theme transitions for surfaces */
+  .bg-card, .bg-background, .bg-muted, .bg-popover, .bg-sidebar, .bg-secondary, .bg-accent {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
   }
 }
